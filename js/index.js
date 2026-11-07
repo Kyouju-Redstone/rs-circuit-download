@@ -2,7 +2,7 @@
    CHANNEL_URL : YouTubeチャンネルのURL。入れると案内の枠に
                  「チャンネルを見る」リンクが出る（不要なら "" のまま）
    ============================================================ */
-var CHANNEL_URL = "";
+var CHANNEL_URL = "https://www.youtube.com/@Kyouju_Redstone";
 
 /* ============================================================
    回路の一覧は config.json に書く（このファイルは編集しなくてよい）
@@ -90,7 +90,7 @@ function buildVideo(world, card, editionKey) {
 
 /* contents（["world", "litematica"] など）を、ボタンに出す文字にする */
 var CONTENT_LABELS = [
-	{ key: "world", label: "ワールド" },
+	{ key: "world", label: "World" },
 	{ key: "litematica", label: "Litematica" },
 ];
 
@@ -211,7 +211,7 @@ function buildCard(world) {
 				makeDownload(
 					edition.key,
 					edition.label + "をダウンロード",
-					[contentsLabel(item.contents), item.version + " 対応"],
+					[contentsLabel(item.contents), "ver." + item.version + "対応"],
 					item.url,
 				),
 			);
