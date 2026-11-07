@@ -9,16 +9,16 @@
 		<title>レッドストーン回路ワールド配布</title>
 		<meta
 			name="description"
-			content="Java版・統合版のレッドストーン回路ワールドを配布しています。解説動画つき。"
+			content="レッドストーン回路のワールド・Litematica設計図を配布しています。Java版・統合版対応、解説動画つき。"
 		/>
-		<link rel="stylesheet" href="./css/style.css" />
+		<link rel="stylesheet" href="css/style.css" />
 	</head>
 	<body>
 		<header>
 			<div class="wrap">
 				<h1>自作回路の配布ページ</h1>
 				<p>
-					YouTubeで紹介したレッドストーン回路のワールドを、Java版・統合版の両方で配布しています。
+					YouTubeで紹介したレッドストーン回路を、ワールドやLitematicaの設計図で配布しています。
 				</p>
 				<div class="owner" id="owner">
 					<svg viewBox="0 0 28 20" aria-hidden="true">
@@ -55,14 +55,16 @@
 
 			<div class="list" id="list"></div>
 			<p class="empty" id="empty" hidden>
-				このエディションのワールドはまだありません。
+				このエディションの回路はまだありません。
 			</p>
 
 			<div class="guide">
 				<section>
 					<h2>Java版の入れ方</h2>
 					<ol>
-						<li>ダウンロードしたzipを解凍する</li>
+						<li>
+							ダウンロードしたzipを解凍する（7z形式は7-Zipなどで解凍）
+						</li>
 						<li>
 							Minecraftフォルダ内の
 							<code>saves</code> に、解凍したフォルダを入れる
@@ -80,6 +82,21 @@
 						<li>ワールド一覧から選ぶ</li>
 					</ol>
 				</section>
+				<section>
+					<h2>Litematica（設計図）の入れ方</h2>
+					<ol>
+						<li>Java版にLitematica MODを入れておく</li>
+						<li>
+							<code>.litematic</code>
+							ファイル（zipや7zの場合は解凍して取り出す）を、Minecraftフォルダ内の
+							<code>schematics</code>
+							フォルダに入れる（なければ作る）
+						</li>
+						<li>
+							ゲーム内で M キーを押し、「Load Schematics」から選ぶ
+						</li>
+					</ol>
+				</section>
 			</div>
 		</main>
 
@@ -87,7 +104,7 @@
 			<div class="wrap">
 				<p>このページは動画投稿者の個人運営です。</p>
 				<p>
-					ワールドは個人での利用・動画での紹介が可能です。再配布はご遠慮ください。
+					配布物は個人での利用・動画での紹介が可能です。再配布はご遠慮ください。
 				</p>
 				<p>
 					Minecraftは Mojang Studios
@@ -96,6 +113,6 @@
 			</div>
 		</footer>
 
-		<script src="./js/index.js"></script>
+		<script src="js/index.js"></script>
 	</body>
 </html>

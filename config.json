@@ -1,0 +1,21 @@
+[
+	{
+		"id": "3x3pistondoor",
+		"title": "3x3 Piston Door",
+		"description": "size: 5x11x1",
+		"downloads": {
+			"java": {
+				"version": "1.21",
+				"youtube": "",
+				"contents": ["world"],
+				"url": ""
+			},
+			"bedrock": {
+				"version": "1.21",
+				"youtube": "",
+				"contents": ["world"],
+				"url": ""
+			}
+		}
+	}
+]
