@@ -1,16 +1,21 @@
 /* ============================================================
-   CHANNEL_URL : YouTubeチャンネルのURL。入れると案内の枠に
-                 「チャンネルを見る」リンクが出る（不要なら "" のまま）
-   ============================================================ */
-var CHANNEL_URL = "https://www.youtube.com/@Kyouju_Redstone";
-
-/* ============================================================
-   回路の一覧は config.json に書く（このファイルは編集しなくてよい）
-   1つの回路 = 1つのカード。JSONなので、次の点に注意する。
+   設定は config.json に書く（このファイルは編集しなくてよい）
+   JSONなので、次の点に注意する。
      ・文字列は半角のダブルクォート " で囲む
      ・最後の項目のあとにカンマ , を付けない
      ・コメントは書けない
 
+   全体の形:  { "channel": { ... }, "worlds": [ ... ] }
+
+   channel : YouTubeチャンネルの案内枠
+     name : チャンネル名
+     url  : チャンネルのURL（空にするとYouTubeアイコンのボタンが出ない）
+     icon : アイコン画像のパス（例: "img/icon.png"）
+            空のままなら、チャンネル名の頭文字を丸で表示する
+     role : 肩書き（例: "回路配布者"）。名前の横に小さく表示する（空なら出ない）
+
+   worlds : 回路の一覧。1つの回路 = 1つのカード。
+   （以下は worlds の中の、1回路分の項目）
    id        : この回路専用リンクの名前。半角の英小文字・数字・ハイフンのみ、
                回路ごとに別の名前にする
                リンクは  配布ページのURL#id  になる（例: .../#farm）
@@ -29,6 +34,7 @@ var CHANNEL_URL = "https://www.youtube.com/@Kyouju_Redstone";
      url     : ダウンロードするファイルへのリンク（1つだけ）
    ============================================================ */
 var WORLDS = [];
+var CHANNEL = { name: "", url: "", icon: "", role: "" };
 
 var DOWNLOAD_ICON =
 	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>';
@@ -211,7 +217,10 @@ function buildCard(world) {
 				makeDownload(
 					edition.key,
 					edition.label + "をダウンロード",
-					[contentsLabel(item.contents), "ver." + item.version + "対応"],
+					[
+						contentsLabel(item.contents),
+						"ver." + item.version + "対応",
+					],
 					item.url,
 				),
 			);
@@ -302,12 +311,43 @@ function showTarget() {
 }
 
 function applyChannel() {
-	if (!CHANNEL_URL) {
+	var box = document.getElementById("owner");
+	if (!CHANNEL.name && !CHANNEL.url) {
+		box.hidden = true;
 		return;
 	}
-	var channel = el("a", "", "チャンネルを見る");
-	channel.href = CHANNEL_URL;
-	document.getElementById("owner").appendChild(channel);
+	var name = CHANNEL.name || "";
+
+	var avatar = document.getElementById("channelAvatar");
+	avatar.textContent = "";
+	if (CHANNEL.icon) {
+		var image = document.createElement("img");
+		image.src = CHANNEL.icon;
+		image.alt = "";
+		avatar.appendChild(image);
+	} else {
+		avatar.textContent = name.slice(0, 1);
+	}
+	document.getElementById("channelName").textContent = name;
+
+	var role = document.getElementById("channelRole");
+	role.textContent = CHANNEL.role || "";
+	role.hidden = !CHANNEL.role;
+
+	/* URLの @ハンドル名 を取り出して表示する */
+	var handle = /@([^/?#]+)/.exec(CHANNEL.url || "");
+	document.getElementById("channelHandle").textContent = handle
+		? "@" + handle[1]
+		: "";
+
+	var link = document.getElementById("channelLink");
+	if (CHANNEL.url) {
+		link.href = CHANNEL.url;
+		link.hidden = false;
+	} else {
+		link.hidden = true;
+	}
+	box.hidden = false;
 }
 
 function showLoadError() {
@@ -316,7 +356,7 @@ function showLoadError() {
 	emptyMessage.hidden = false;
 }
 
-function loadWorlds() {
+function loadConfig() {
 	fetch("config.json")
 		.then(function (response) {
 			if (!response.ok) {
@@ -325,10 +365,12 @@ function loadWorlds() {
 			return response.json();
 		})
 		.then(function (data) {
-			if (!Array.isArray(data)) {
-				throw new Error("config.json は配列にしてください");
+			if (!data || !Array.isArray(data.worlds)) {
+				throw new Error('config.json の "worlds" は配列にしてください');
 			}
-			WORLDS = data;
+			WORLDS = data.worlds;
+			CHANNEL = data.channel || CHANNEL;
+			applyChannel();
 			render();
 			showTarget();
 		})
@@ -338,6 +380,5 @@ function loadWorlds() {
 		});
 }
 
-applyChannel();
 window.addEventListener("hashchange", showTarget);
-loadWorlds();
+loadConfig();

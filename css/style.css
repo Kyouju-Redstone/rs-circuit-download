@@ -60,32 +60,95 @@ header p {
 	font-size: 15px;
 }
 
-.owner {
+/* YouTubeのチャンネル欄ふうの案内枠（幅に合わせて伸び縮みする） */
+.channel {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 16px;
+	padding: 10px 12px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.channel[hidden] {
+	display: none;
+}
+.avatar {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: clamp(40px, 11vw, 48px);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	overflow: hidden;
+	background: #4a5568;
+	color: #fff;
+	font-size: clamp(17px, 4.6vw, 20px);
+	font-weight: 700;
+}
+.avatar img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.channel-info {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.channel-name {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 4px 14px;
-	margin-top: 16px;
-	padding: 10px 14px;
-	background: var(--surface);
-	border: 1px solid var(--line);
-	border-left: 4px solid var(--accent);
-	border-radius: 6px;
-	font-size: 14px;
+	gap: 2px 8px;
+	line-height: 1.4;
 }
-.owner a {
-	color: var(--accent);
+.channel-title {
+	font-size: 16px;
 	font-weight: 700;
+	overflow-wrap: anywhere;
 }
-.owner svg {
+.channel-role {
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: #e8eefc;
+	color: var(--accent);
+	font-size: 11px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.channel-role[hidden] {
+	display: none;
+}
+.channel-handle {
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+.channel-handle:empty {
+	display: none;
+}
+.channel-btn {
 	flex: none;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	transition: background-color 0.15s;
+}
+.channel-btn svg {
+	display: block;
 	width: 28px;
 	height: 20px;
-	display: block;
 }
-.owner span {
-	flex: 1 1 14em;
-	min-width: 0;
+.channel-btn:hover {
+	background: var(--bg);
+}
+.channel-btn[hidden] {
+	display: none;
 }
 
 .filter {

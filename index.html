@@ -20,14 +20,43 @@
 				<p>
 					YouTubeで紹介したレッドストーン回路のワールドや、Litematicaの設計図を配布しています。
 				</p>
-				<div class="owner" id="owner">
-					<svg viewBox="0 0 28 20" aria-hidden="true">
-						<rect width="28" height="20" rx="5" fill="#ff0000" />
-						<path d="M11 6l7 4-7 4z" fill="#fff" />
-					</svg>
+				<div class="channel" id="owner" hidden>
 					<span
-						>YouTubeで紹介している回路を、投稿者本人が配布する公式ページです。</span
+						class="avatar"
+						id="channelAvatar"
+						aria-hidden="true"
+					></span>
+					<div class="channel-info">
+						<div class="channel-name">
+							<span class="channel-title" id="channelName"></span>
+							<span
+								class="channel-role"
+								id="channelRole"
+								hidden
+							></span>
+						</div>
+						<div class="channel-handle" id="channelHandle"></div>
+					</div>
+					<a
+						class="channel-btn"
+						id="channelLink"
+						href="#"
+						target="_blank"
+						rel="noopener"
+						aria-label="YouTubeチャンネルを開く"
+						title="YouTubeチャンネルを開く"
+						hidden
 					>
+						<svg viewBox="0 0 28 20" aria-hidden="true">
+							<rect
+								width="28"
+								height="20"
+								rx="5"
+								fill="#ff0000"
+							/>
+							<path d="M11 6l7 4-7 4z" fill="#fff" />
+						</svg>
+					</a>
 				</div>
 			</div>
 		</header>
@@ -102,9 +131,7 @@
 
 		<footer>
 			<div class="wrap">
-				<p>
-					配布物はの再配布はご遠慮ください。
-				</p>
+				<p>配布物はの再配布はご遠慮ください。</p>
 				<p>
 					Minecraftは Mojang Studios
 					の商標です。このページは非公式です。
