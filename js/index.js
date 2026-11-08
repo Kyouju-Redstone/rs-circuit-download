@@ -164,7 +164,6 @@ function buildCard(world) {
 	copy.addEventListener("click", function () {
 		copyLink(world.id, copy);
 	});
-	row.appendChild(copy);
 	body.appendChild(row);
 	body.appendChild(el("p", "", world.description));
 
@@ -227,6 +226,8 @@ function buildCard(world) {
 		}
 	}
 
+	/* 「リンクをコピー」は、切り替えボタンと同じ行の右端に置く */
+	picker.appendChild(copy);
 	body.appendChild(picker);
 	body.appendChild(downloads);
 	card.appendChild(body);
