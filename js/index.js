@@ -7,6 +7,11 @@
 
    全体の形:  { "channel": { ... }, "worlds": [ ... ] }
 
+   url が GitHub Releases のファイルなら、ボタンの下に
+   アップロード日時とダウンロード数が自動で表示される（設定は不要）。
+   ・url は  https://github.com/ユーザー名/リポジトリ名/releases/download/タグ/ファイル名  の形にする
+   ・取得には GitHub の公開API を使う（1時間に60回までの制限があるため、10分間はブラウザに保存して再利用する）
+
    channel : YouTubeチャンネルの案内枠
      name : チャンネル名
      url  : チャンネルのURL（空にするとYouTubeアイコンのボタンが出ない）
@@ -212,7 +217,8 @@ function buildCard(world) {
 			continue;
 		}
 		if (item.url) {
-			downloads.appendChild(
+			var cell = el("div", "dl-cell");
+			cell.appendChild(
 				makeDownload(
 					edition.key,
 					edition.label + "をダウンロード",
@@ -223,6 +229,13 @@ function buildCard(world) {
 					item.url,
 				),
 			);
+			/* GitHub Releases のURLなら、アップロード日時とダウンロード数を出す欄を作る */
+			if (releaseRepo(item.url)) {
+				var stats = el("div", "dl-stats");
+				stats.setAttribute("data-stats-url", item.url);
+				cell.appendChild(stats);
+			}
+			downloads.appendChild(cell);
 		}
 	}
 
@@ -248,6 +261,7 @@ function render() {
 		emptyMessage.textContent = "このエディションの回路はまだありません。";
 	}
 	emptyMessage.hidden = shown > 0;
+	applyStats();
 }
 
 var buttons = document.querySelectorAll(".filter button");
@@ -309,6 +323,159 @@ function showTarget() {
 	if (card) {
 		card.scrollIntoView({ block: "center" });
 	}
+}
+
+/* ---------- GitHub Releases の アップロード日時 / ダウンロード数 ---------- */
+var STATS = {};
+var STATS_TTL = 10 * 60 * 1000;
+
+/* URLの形が合っていなければ空文字を返す。USERNAME のままの仮のURLも対象外にする */
+function releaseRepo(url) {
+	var m =
+		/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/releases\/download\//.exec(
+			url || "",
+		);
+	if (!m || m[1] === "USERNAME") {
+		return "";
+	}
+	return m[1] + "/" + m[2];
+}
+
+/* 日本語のファイル名などが %E3... と書かれていても突き合わせられるように、そろえる */
+function normalizeUrl(url) {
+	try {
+		return decodeURIComponent(url).toLowerCase();
+	} catch (error) {
+		return String(url).toLowerCase();
+	}
+}
+
+function readCache(key) {
+	try {
+		var saved = JSON.parse(localStorage.getItem(key));
+		if (saved && Date.now() - saved.time < STATS_TTL) {
+			return saved.data;
+		}
+	} catch (error) {
+		/* 保存が使えない環境では、毎回取りに行く */
+	}
+	return null;
+}
+
+function writeCache(key, data) {
+	try {
+		localStorage.setItem(
+			key,
+			JSON.stringify({ time: Date.now(), data: data }),
+		);
+	} catch (error) {
+		/* 保存できなくても動作には影響しない */
+	}
+}
+
+function fetchAssets(repo) {
+	var key = "assets:" + repo;
+	var cached = readCache(key);
+	if (cached) {
+		return Promise.resolve(cached);
+	}
+	return fetch(
+		"https://api.github.com/repos/" + repo + "/releases?per_page=100",
+		{
+			headers: { Accept: "application/vnd.github+json" },
+		},
+	)
+		.then(function (response) {
+			if (!response.ok) {
+				throw new Error("GitHub API: HTTP " + response.status);
+			}
+			return response.json();
+		})
+		.then(function (releases) {
+			var assets = [];
+			for (var i = 0; i < releases.length; i++) {
+				var files = releases[i].assets || [];
+				for (var k = 0; k < files.length; k++) {
+					assets.push({
+						url: files[k].browser_download_url,
+						count: files[k].download_count,
+						uploaded: files[k].created_at,
+					});
+				}
+			}
+			writeCache(key, assets);
+			return assets;
+		});
+}
+
+function pad2(n) {
+	return n < 10 ? "0" + n : String(n);
+}
+
+function formatDateTime(iso) {
+	var d = new Date(iso);
+	if (isNaN(d.getTime())) {
+		return "";
+	}
+	return (
+		d.getFullYear() +
+		"/" +
+		pad2(d.getMonth() + 1) +
+		"/" +
+		pad2(d.getDate()) +
+		" " +
+		pad2(d.getHours()) +
+		":" +
+		pad2(d.getMinutes())
+	);
+}
+
+/* 画面上の統計欄に、取得できた値を入れる */
+function applyStats() {
+	var boxes = document.querySelectorAll("[data-stats-url]");
+	for (var i = 0; i < boxes.length; i++) {
+		var stat = STATS[normalizeUrl(boxes[i].getAttribute("data-stats-url"))];
+		if (!stat) {
+			continue;
+		}
+		boxes[i].textContent = "";
+		boxes[i].appendChild(
+			el(
+				"span",
+				"",
+				stat.count.toLocaleString("ja-JP") + "回ダウンロード",
+			),
+		);
+		var when = formatDateTime(stat.uploaded);
+		if (when) {
+			boxes[i].appendChild(el("span", "", when + " アップロード"));
+		}
+	}
+}
+
+function loadStats() {
+	var repos = [];
+	for (var i = 0; i < WORLDS.length; i++) {
+		for (var key in WORLDS[i].downloads) {
+			var repo = releaseRepo(WORLDS[i].downloads[key].url);
+			if (repo && repos.indexOf(repo) === -1) {
+				repos.push(repo);
+			}
+		}
+	}
+	repos.forEach(function (repo) {
+		fetchAssets(repo)
+			.then(function (assets) {
+				for (var n = 0; n < assets.length; n++) {
+					STATS[normalizeUrl(assets[n].url)] = assets[n];
+				}
+				applyStats();
+			})
+			.catch(function (error) {
+				/* 取得できなくてもページは普通に使える（統計欄が空のままになる） */
+				console.warn(error);
+			});
+	});
 }
 
 function applyChannel() {
@@ -374,6 +541,7 @@ function loadConfig() {
 			applyChannel();
 			render();
 			showTarget();
+			loadStats();
 		})
 		.catch(function (error) {
 			console.error(error);
