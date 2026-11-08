@@ -7,8 +7,8 @@
 
    全体の形:  { "channel": { ... }, "worlds": [ ... ] }
 
-   url が GitHub Releases のファイルなら、ボタンの下に
-   アップロード日時とダウンロード数が自動で表示される（設定は不要）。
+   url が GitHub Releases のファイル（…/releases/latest/download/ファイル名 の形でもよい）なら、ボタンの中に
+   ダウンロード数とアップロード日時が、アイコンつきで自動で表示される（設定は不要）。
    ・url は  https://github.com/ユーザー名/リポジトリ名/releases/download/タグ/ファイル名  の形にする
    ・取得には GitHub の公開API を使う（1時間に60回までの制限があるため、10分間はブラウザに保存して再利用する）
 
@@ -41,12 +41,31 @@
 var WORLDS = [];
 var CHANNEL = { name: "", url: "", icon: "", role: "" };
 
-var DOWNLOAD_ICON =
-	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>';
+/* アイコン（Lucide のパスを使った線画）。svg("名前") でSVG文字列になる */
+var ICON_PATHS = {
+	download:
+		'<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+	clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+	link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+	check: '<path d="M20 6 9 17l-5-5"/>',
+	play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+	globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+	layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+	coffee: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/>',
+	box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+};
+
+function svg(name) {
+	return (
+		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+		ICON_PATHS[name] +
+		"</svg>"
+	);
+}
 
 var EDITIONS = [
-	{ key: "java", label: "Java版" },
-	{ key: "bedrock", label: "統合版" },
+	{ key: "java", label: "Java版", icon: "coffee" },
+	{ key: "bedrock", label: "統合版", icon: "box" },
 ];
 
 var currentFilter = "all";
@@ -99,42 +118,75 @@ function buildVideo(world, card, editionKey) {
 	return box;
 }
 
-/* contents（["world", "litematica"] など）を、ボタンに出す文字にする */
+/* contents（["world", "litematica"] など）を、アイコンつきの小さなラベルにする */
 var CONTENT_LABELS = [
-	{ key: "world", label: "World" },
-	{ key: "litematica", label: "Litematica" },
+	{ key: "world", label: "World", icon: "globe" },
+	{ key: "litematica", label: "Litematica", icon: "layers" },
 ];
 
-function contentsLabel(contents) {
+function contentsChips(contents) {
+	var chips = [];
 	if (!Array.isArray(contents)) {
-		return "";
+		return chips;
 	}
-	var names = [];
 	for (var i = 0; i < CONTENT_LABELS.length; i++) {
 		if (contents.indexOf(CONTENT_LABELS[i].key) !== -1) {
-			names.push(CONTENT_LABELS[i].label);
+			var chip = el("span", "chip");
+			chip.innerHTML = svg(CONTENT_LABELS[i].icon);
+			chip.appendChild(document.createTextNode(CONTENT_LABELS[i].label));
+			chips.push(chip);
 		}
 	}
-	return names.join("＋");
+	return chips;
 }
 
-function makeDownload(kind, title, notes, url) {
-	var link = el("a", "dl " + kind);
-	link.href = url;
+/* ダウンロードのタイル: エディションのアイコン / 名前 / 中身 / 統計 / ダウンロードの矢印 */
+function makeDownload(edition, item) {
+	var link = el("a", "dl " + edition.key);
+	link.href = item.url;
 	link.setAttribute("download", "");
-	var icon = el("span", "ico");
-	icon.innerHTML = DOWNLOAD_ICON;
+	link.setAttribute(
+		"aria-label",
+		edition.label + "用のファイルをダウンロード",
+	);
+
+	var ico = el("span", "ico");
+	ico.innerHTML = svg(edition.icon);
+
 	var text = el("span", "txt");
-	text.appendChild(el("b", "", title));
-	var small = el("small");
-	for (var n = 0; n < notes.length; n++) {
-		if (notes[n]) {
-			small.appendChild(el("span", "", notes[n]));
+
+	/* 1行目: 対応バージョン（左）+ エディション名 */
+	var head = el("span", "head");
+	head.appendChild(el("b", "", edition.label));
+	head.appendChild(el("span", "ver", "ver." + item.version + "対応"));
+	text.appendChild(head);
+
+	/* 2行目: 中身（World / Litematica）。なければ行ごと出さない */
+	var chips = contentsChips(item.contents);
+	if (chips.length > 0) {
+		var meta = el("span", "meta");
+		for (var i = 0; i < chips.length; i++) {
+			meta.appendChild(chips[i]);
 		}
+		text.appendChild(meta);
 	}
-	text.appendChild(small);
-	link.appendChild(icon);
+
+	/* 3行目: GitHub Releases のURLなら、ダウンロード数とアップロード日時。
+	   取得できるまで・取得できなかったときは「—」を出す */
+	if (releaseRepo(item.url)) {
+		var stats = el("span", "dl-stats");
+		stats.setAttribute("data-stats-url", item.url);
+		stats.appendChild(makeStat("clock", "—", "アップロード日時"));
+		stats.appendChild(makeStat("download", "—", "ダウンロード数"));
+		text.appendChild(stats);
+	}
+
+	var go = el("span", "go");
+	go.innerHTML = svg("download");
+
+	link.appendChild(ico);
 	link.appendChild(text);
+	link.appendChild(go);
 	return link;
 }
 
@@ -162,19 +214,30 @@ function buildCard(world) {
 	card.appendChild(video);
 
 	var body = el("div", "body");
+
+	/* タイトル + リンクのコピー（アイコンだけのボタン） */
 	var row = el("div", "title-row");
 	row.appendChild(el("h2", "", world.title));
-	var copy = el("button", "copy", "リンクをコピー");
+	var copy = el("button", "copy");
 	copy.type = "button";
+	copy.setAttribute("aria-label", "この回路のリンクをコピー");
+	copy.title = "リンクをコピー";
+	copy.innerHTML = svg("link");
 	copy.addEventListener("click", function () {
 		copyLink(world.id, copy);
 	});
+	row.appendChild(copy);
 	body.appendChild(row);
 	body.appendChild(el("p", "", world.description));
 
 	/* 解説動画の切り替え（Java版 / 統合版） */
 	var picker = el("div", "picker");
-	picker.appendChild(el("span", "picker-label", "解説動画"));
+	var pickerLabel = el("span", "picker-label");
+	pickerLabel.innerHTML = svg("play");
+	pickerLabel.appendChild(document.createTextNode("解説動画"));
+	picker.appendChild(pickerLabel);
+	var tabGroup = el("span", "tabs");
+	picker.appendChild(tabGroup);
 	var tabs = [];
 
 	function selectEdition(key) {
@@ -212,35 +275,15 @@ function buildCard(world) {
 		}
 		var tab = makeTab(edition);
 		tabs.push(tab);
-		picker.appendChild(tab);
+		tabGroup.appendChild(tab);
 		if (currentFilter !== "all" && currentFilter !== edition.key) {
 			continue;
 		}
 		if (item.url) {
-			var cell = el("div", "dl-cell");
-			cell.appendChild(
-				makeDownload(
-					edition.key,
-					edition.label + "をダウンロード",
-					[
-						contentsLabel(item.contents),
-						"ver." + item.version + "対応",
-					],
-					item.url,
-				),
-			);
-			/* GitHub Releases のURLなら、アップロード日時とダウンロード数を出す欄を作る */
-			if (releaseRepo(item.url)) {
-				var stats = el("div", "dl-stats");
-				stats.setAttribute("data-stats-url", item.url);
-				cell.appendChild(stats);
-			}
-			downloads.appendChild(cell);
+			downloads.appendChild(makeDownload(edition, item));
 		}
 	}
 
-	/* 「リンクをコピー」は、切り替えボタンと同じ行の右端に置く */
-	picker.appendChild(copy);
 	body.appendChild(picker);
 	body.appendChild(downloads);
 	card.appendChild(body);
@@ -284,9 +327,13 @@ for (var b = 0; b < buttons.length; b++) {
 function copyLink(id, button) {
 	var url = location.href.split("#")[0] + "#" + id;
 	function done() {
-		button.textContent = "コピーしました";
+		button.innerHTML = svg("check");
+		button.classList.add("done");
+		button.title = "コピーしました";
 		setTimeout(function () {
-			button.textContent = "リンクをコピー";
+			button.innerHTML = svg("link");
+			button.classList.remove("done");
+			button.title = "リンクをコピー";
 		}, 1600);
 	}
 	function fallback() {
@@ -327,18 +374,32 @@ function showTarget() {
 
 /* ---------- GitHub Releases の アップロード日時 / ダウンロード数 ---------- */
 var STATS = {};
+var STATS_BY_FILE = {};
+var STATS_ERRORS = {};
 var STATS_TTL = 10 * 60 * 1000;
 
-/* URLの形が合っていなければ空文字を返す。USERNAME のままの仮のURLも対象外にする */
+/* GitHub Releases のURLなら "ユーザー名/リポジトリ名" を返す。それ以外は空文字。
+   .../releases/download/タグ/ファイル名 と .../releases/latest/download/ファイル名 の両方に対応 */
 function releaseRepo(url) {
 	var m =
-		/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/releases\/download\//.exec(
+		/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/releases\/(?:download\/[^/]+|latest\/download)\//.exec(
 			url || "",
 		);
-	if (!m || m[1] === "USERNAME") {
+	if (!m) {
 		return "";
 	}
 	return m[1] + "/" + m[2];
+}
+
+/* USERNAME のままの仮のURLは、GitHubに問い合わせない */
+function isPlaceholderRepo(repo) {
+	return repo.split("/")[0] === "USERNAME";
+}
+
+/* URLが完全に一致しなくても（タグ違い・latest など）、ファイル名で探せるようにする */
+function fileKey(url) {
+	var name = String(url).split("#")[0].split("?")[0].split("/").pop();
+	return releaseRepo(url).toLowerCase() + "/" + normalizeUrl(name);
 }
 
 /* 日本語のファイル名などが %E3... と書かれていても突き合わせられるように、そろえる */
@@ -350,10 +411,10 @@ function normalizeUrl(url) {
 	}
 }
 
-function readCache(key) {
+function readCache(key, allowStale) {
 	try {
 		var saved = JSON.parse(localStorage.getItem(key));
-		if (saved && Date.now() - saved.time < STATS_TTL) {
+		if (saved && (allowStale || Date.now() - saved.time < STATS_TTL)) {
 			return saved.data;
 		}
 	} catch (error) {
@@ -375,7 +436,7 @@ function writeCache(key, data) {
 
 function fetchAssets(repo) {
 	var key = "assets:" + repo;
-	var cached = readCache(key);
+	var cached = readCache(key, false);
 	if (cached) {
 		return Promise.resolve(cached);
 	}
@@ -405,6 +466,13 @@ function fetchAssets(repo) {
 			}
 			writeCache(key, assets);
 			return assets;
+		})
+		.catch(function (error) {
+			var stale = readCache(key, true);
+			if (stale) {
+				return stale;
+			}
+			throw error;
 		});
 }
 
@@ -430,26 +498,39 @@ function formatDateTime(iso) {
 	);
 }
 
+/* アイコン + 値の小さな表示（読み上げ用の説明つき） */
+function makeStat(iconName, value, label) {
+	var stat = el("span", "stat");
+	stat.title = label;
+	stat.innerHTML = svg(iconName);
+	stat.appendChild(el("span", "sr-only", label + " "));
+	stat.appendChild(document.createTextNode(value));
+	return stat;
+}
+
 /* 画面上の統計欄に、取得できた値を入れる */
 function applyStats() {
 	var boxes = document.querySelectorAll("[data-stats-url]");
 	for (var i = 0; i < boxes.length; i++) {
-		var stat = STATS[normalizeUrl(boxes[i].getAttribute("data-stats-url"))];
+		var url = boxes[i].getAttribute("data-stats-url");
+		var stat = STATS[normalizeUrl(url)] || STATS_BY_FILE[fileKey(url)];
 		if (!stat) {
+			boxes[i].title = STATS_ERRORS[releaseRepo(url)] || "";
 			continue;
 		}
+		boxes[i].title = "";
 		boxes[i].textContent = "";
-		boxes[i].appendChild(
-			el(
-				"span",
-				"",
-				stat.count.toLocaleString("ja-JP") + "回ダウンロード",
-			),
-		);
 		var when = formatDateTime(stat.uploaded);
 		if (when) {
-			boxes[i].appendChild(el("span", "", when + " アップロード"));
+			boxes[i].appendChild(makeStat("clock", when, "アップロード日時"));
 		}
+		boxes[i].appendChild(
+			makeStat(
+				"download",
+				stat.count.toLocaleString("ja-JP"),
+				"ダウンロード数",
+			),
+		);
 	}
 }
 
@@ -458,7 +539,11 @@ function loadStats() {
 	for (var i = 0; i < WORLDS.length; i++) {
 		for (var key in WORLDS[i].downloads) {
 			var repo = releaseRepo(WORLDS[i].downloads[key].url);
-			if (repo && repos.indexOf(repo) === -1) {
+			if (
+				repo &&
+				!isPlaceholderRepo(repo) &&
+				repos.indexOf(repo) === -1
+			) {
 				repos.push(repo);
 			}
 		}
@@ -468,12 +553,19 @@ function loadStats() {
 			.then(function (assets) {
 				for (var n = 0; n < assets.length; n++) {
 					STATS[normalizeUrl(assets[n].url)] = assets[n];
+					var byFile = fileKey(assets[n].url);
+					if (!STATS_BY_FILE[byFile]) {
+						STATS_BY_FILE[byFile] = assets[n];
+					}
 				}
 				applyStats();
 			})
 			.catch(function (error) {
-				/* 取得できなくてもページは普通に使える（統計欄が空のままになる） */
-				console.warn(error);
+				/* 取得できなくてもページは普通に使える（統計は「—」のままになる） */
+				console.warn(repo + ": " + error.message);
+				STATS_ERRORS[repo] =
+					"取得できませんでした（" + error.message + "）";
+				applyStats();
 			});
 	});
 }

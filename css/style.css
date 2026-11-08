@@ -93,7 +93,6 @@ h1 {
 }
 header p {
 	margin: 0;
-	max-width: 36em;
 	color: var(--muted);
 	font-size: 15px;
 }
@@ -232,9 +231,13 @@ header p {
 	gap: 16px;
 	container-type: inline-size;
 }
+/* 上段: 動画 + (タイトル / 説明 / 動画の切り替え)、下段: ダウンロード */
 .card {
-	display: flex;
-	gap: 16px;
+	display: grid;
+	grid-template-columns: clamp(180px, 29%, 200px) minmax(0, 1fr);
+	grid-template-rows: auto auto 1fr auto;
+	column-gap: 16px;
+	row-gap: 6px;
 	min-width: 0;
 	padding: 14px;
 	background: var(--surface);
@@ -248,10 +251,15 @@ header p {
 		0 0 0 2px var(--accent),
 		var(--shadow-hover);
 }
+.body {
+	display: contents;
+}
+
 .video {
 	position: relative;
-	flex: 0 0 clamp(200px, 36%, 260px);
-	align-self: flex-start;
+	grid-column: 1;
+	grid-row: 1 / 4;
+	align-self: start;
 	aspect-ratio: 16 / 9;
 	background: #1b1f27;
 	border-radius: 14px;
@@ -306,23 +314,17 @@ header p {
 	font-size: 12px;
 }
 
-.body {
-	position: relative;
-	container: cardbody / inline-size;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	min-width: 0;
-	flex: 1;
-}
+/* タイトル + リンクのコピー */
 .title-row {
+	grid-column: 2;
+	grid-row: 1;
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	flex-wrap: wrap;
+	min-width: 0;
 }
 .card h2 {
-	flex: 1 1 8em;
+	flex: 1 1 auto;
 	min-width: 0;
 	margin: 0;
 	font-size: 17px;
@@ -333,171 +335,260 @@ header p {
 	overflow-wrap: anywhere;
 	text-wrap: balance;
 }
-.card p {
+.copy {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--chip);
+	color: var(--muted);
+	cursor: pointer;
+}
+.copy svg {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+.copy:hover {
+	background: rgba(15, 23, 42, 0.1);
+	color: var(--ink);
+}
+.copy.done {
+	background: var(--java-tint);
+	color: var(--java);
+}
+
+.body > p {
+	grid-column: 2;
+	grid-row: 2;
 	margin: 0;
 	color: var(--muted);
 	font-size: 14px;
 	line-height: 1.6;
 	overflow-wrap: anywhere;
 }
-.copy {
-	margin-left: auto;
-	font: inherit;
-	font-size: 12px;
-	padding: 3px 11px;
-	border: 0;
-	border-radius: 999px;
-	background: var(--chip);
-	color: var(--muted);
-	cursor: pointer;
-}
-.copy:hover {
-	background: rgba(15, 23, 42, 0.1);
-	color: var(--ink);
-}
 
-/* 解説動画の切り替え */
+/* 解説動画の切り替え（セグメント） */
 .picker {
+	grid-column: 2;
+	grid-row: 3;
+	align-self: end;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 4px 6px;
-	margin-top: 2px;
+	gap: 6px 8px;
 }
 .picker-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	font-size: 12px;
+	font-weight: 500;
 	color: var(--muted);
+}
+.picker-label svg {
+	width: 12px;
+	height: 12px;
+	display: block;
+}
+.tabs {
+	display: inline-flex;
+	padding: 2px;
+	background: var(--chip);
+	border-radius: 999px;
 }
 .badge {
 	font: inherit;
 	font-size: 12px;
 	font-weight: 700;
-	padding: 2px 11px;
+	padding: 3px 12px;
 	border: 0;
 	border-radius: 999px;
-	background: var(--chip);
+	background: transparent;
 	color: var(--muted);
 	cursor: pointer;
 }
 .badge:hover {
 	color: var(--ink);
 }
+.badge[aria-pressed="true"] {
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+}
 .badge[aria-pressed="true"].java {
-	background: var(--java-tint);
 	color: var(--java);
-	box-shadow: inset 0 0 0 1px rgba(31, 122, 58, 0.35);
 }
 .badge[aria-pressed="true"].bedrock {
-	background: var(--bedrock-tint);
 	color: var(--bedrock);
-	box-shadow: inset 0 0 0 1px rgba(31, 91, 209, 0.35);
 }
 
-/* ダウンロードボタン（1つにつき、下に統計の欄がつく） */
-.dl-cell {
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-.dl-cell .dl {
-	flex: 1;
-}
-.dl-stats {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0 10px;
-	min-height: 1.5em;
-	padding: 0 6px;
-	font-size: 11px;
-	line-height: 1.5;
-	color: var(--muted);
-}
-.dl-stats span {
-	white-space: nowrap;
-}
-
+/* ダウンロード: エディションごとのタイル（タイル全体が押せる） */
 .downloads {
+	grid-column: 1 / -1;
+	grid-row: 4;
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-	gap: 8px;
-	margin-top: auto;
-	padding-top: 8px;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+	gap: 10px;
+	margin-top: 4px;
 }
 .dl {
 	--c: var(--accent);
+	--tint: #e8eefc;
 	--g: linear-gradient(135deg, #5b8def, #2f5fd0);
 	min-width: 0;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 6px 10px 6px 6px;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: start;
+	gap: 12px;
+	padding: 12px;
 	background: var(--surface);
 	border: 1px solid var(--line);
-	border-radius: 14px;
+	border-radius: 16px;
 	color: var(--ink);
 	text-decoration: none;
 }
 .dl.java {
 	--c: var(--java);
+	--tint: var(--java-tint);
 	--g: linear-gradient(135deg, #36b25c, #1b7134);
 }
 .dl.bedrock {
 	--c: var(--bedrock);
+	--tint: var(--bedrock-tint);
 	--g: linear-gradient(135deg, #5a92ff, #1c4fc4);
 }
 .dl .ico {
 	display: grid;
 	place-items: center;
-	flex: none;
-	width: 36px;
-	height: 36px;
-	border-radius: 10px;
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
 	background: var(--g);
 	color: #fff;
 }
 .dl .ico svg {
-	width: 18px;
-	height: 18px;
+	width: 20px;
+	height: 20px;
 	display: block;
 }
 .dl .txt {
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
-	line-height: 1.3;
+	gap: 3px;
 }
 .dl .txt b {
-	font-size: 13.5px;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	font-size: 15px;
+	line-height: 1.3;
 }
-.dl .txt small {
+.dl .head {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: baseline;
 	gap: 0 8px;
-	font-size: 12px;
+}
+.dl .meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 6px;
+}
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 8px 1px 6px;
+	border-radius: 999px;
+	background: var(--chip);
+	color: var(--ink);
+	font-size: 11.5px;
+	font-weight: 500;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+.chip svg {
+	width: 12px;
+	height: 12px;
+	display: block;
+}
+.ver {
+	font-size: 11.5px;
+	color: var(--muted);
+	white-space: nowrap;
+}
+.dl-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 12px;
+	font-size: 11.5px;
 	color: var(--muted);
 }
-.dl .txt small span {
+.stat {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	line-height: 1.6;
 	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+.stat svg {
+	width: 12px;
+	height: 12px;
+	display: block;
+}
+.dl .go {
+	align-self: center;
+	display: grid;
+	place-items: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: var(--tint);
+	color: var(--c);
+}
+.dl .go svg {
+	width: 18px;
+	height: 18px;
+	display: block;
 }
 .dl:hover {
 	border-color: color-mix(in srgb, var(--c) 45%, transparent);
-	box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--c) 55%, transparent);
+	box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--c) 60%, transparent);
+}
+.dl:hover .go {
+	background: var(--c);
+	color: #fff;
 }
 .dl:focus-visible {
 	outline-color: var(--c);
 }
-
-.card.playing {
-	flex-direction: column;
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
 }
-.card.playing .video {
-	flex-basis: auto;
-	width: 100%;
+
+/* 動画を再生しているあいだは、動画を横幅いっぱいにして縦に並べる */
+.card.playing {
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: none;
+}
+.card.playing .video,
+.card.playing .title-row,
+.card.playing .body > p,
+.card.playing .picker,
+.card.playing .downloads {
+	grid-column: 1;
+	grid-row: auto;
+}
+.card.playing .picker {
 	align-self: auto;
 }
 
@@ -578,38 +669,41 @@ footer p {
 }
 
 /* ---------- 幅に合わせた切り替え ---------- */
-/* リンクをコピー: 文字の入る幅があるときは、タイトルと同じ高さの右端に置く。
-   狭いときは、切り替えボタンと同じ行に下ろす（タイトルの幅を確保するため） */
-@container cardbody (min-width: 381px) {
-	.copy {
-		position: absolute;
-		top: 1px;
-		right: 0;
-		margin: 0;
-	}
-	.card h2 {
-		padding-right: 112px;
-	}
-}
-/* カード自身の幅に合わせて並びを切り替える（画面幅ではなくカード幅が基準） */
+/* カード自身の幅が狭いときは、動画を上にして縦に並べる（画面幅ではなくカード幅が基準） */
 @container (max-width: 480px) {
 	.card {
-		flex-direction: column;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: none;
+		row-gap: 8px;
 	}
-	.video {
-		flex-basis: auto;
-		width: 100%;
+	.video,
+	.title-row,
+	.body > p,
+	.picker,
+	.downloads {
+		grid-column: 1;
+		grid-row: auto;
+	}
+	.picker {
 		align-self: auto;
 	}
 }
 @supports not (container-type: inline-size) {
 	@media (max-width: 560px) {
 		.card {
-			flex-direction: column;
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: none;
+			row-gap: 8px;
 		}
-		.video {
-			flex-basis: auto;
-			width: 100%;
+		.video,
+		.title-row,
+		.body > p,
+		.picker,
+		.downloads {
+			grid-column: 1;
+			grid-row: auto;
+		}
+		.picker {
 			align-self: auto;
 		}
 	}
@@ -627,14 +721,11 @@ footer p {
 		padding: 9px 18px;
 	}
 	.badge {
-		padding: 6px 12px;
+		padding: 7px 14px;
 	}
 	.copy {
-		padding: 6px 12px;
-	}
-	.dl {
-		padding-top: 8px;
-		padding-bottom: 8px;
+		width: 40px;
+		height: 40px;
 	}
 }
 
@@ -642,6 +733,7 @@ footer p {
 @media (prefers-reduced-motion: no-preference) {
 	.card,
 	.dl,
+	.dl .go,
 	.filter button,
 	.badge,
 	.copy,
@@ -662,13 +754,10 @@ footer p {
 			0 0 0 2px var(--accent),
 			var(--shadow-hover);
 	}
-	.dl:hover {
-		transform: translateY(-1px);
-	}
-	.dl .ico svg {
+	.dl .go svg {
 		transition: transform 0.2s ease;
 	}
-	.dl:hover .ico svg {
+	.dl:hover .go svg {
 		transform: translateY(2px);
 	}
 	.video button::before {
