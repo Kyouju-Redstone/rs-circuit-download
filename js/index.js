@@ -158,7 +158,9 @@ function makeDownload(edition, item) {
 	/* 1行目: 対応バージョン（左）+ エディション名 */
 	var head = el("span", "head");
 	head.appendChild(el("b", "", edition.label));
-	head.appendChild(el("span", "ver", "ver." + item.version + "対応"));
+	if (item.version) {
+		head.appendChild(el("span", "ver", "ver." + item.version + " 対応"));
+	}
 	text.appendChild(head);
 
 	/* 2行目: 中身（World / Litematica）。なければ行ごと出さない */
