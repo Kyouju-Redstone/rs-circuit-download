@@ -7,21 +7,47 @@
 	},
 	"worlds": [
 		{
-			"id": "3x3pistondoor",
-			"title": "3x3 Piston Door",
-			"description": "size: 5x11x1",
+			"id": "2x2_fireplace_door",
+			"title": "2×2 暖炉ドア",
+			"description": "回路サイズ: 奥行5 × 横幅10 × 高さ9",
+			"downloads": {
+				"bedrock": {
+					"version": "",
+					"youtube": "EsYRcXytWQM",
+					"contents": ["world"],
+					"url": "https://github.com/Kyouju-Redstone/rs-circuit-download/releases/download/circuit_dl/2x2FireplaceDoor.mcworld"
+				}
+			}
+		},
+		{
+			"id": "3high_hidden_popup_staircase",
+			"title": "ポップアップ 3段隠し階段",
+			"description": "回路サイズ: 奥行9 × 横幅7 × 高さ4 (床部分を除く)",
+			"downloads": {
+				"bedrock": {
+					"version": "",
+					"youtube": "Vjgd0vNKENk",
+					"contents": ["world"],
+					"url": "https://github.com/Kyouju-Redstone/rs-circuit-download/releases/download/BE_3high_Hidden_Popup_Staircase/3HighHiddenPopupStaircase.mcworld"
+				}
+			}
+		},
+		{
+			"id": "castle_gate",
+			"title": "水路にも設置できる城門",
+			"description": "",
 			"downloads": {
 				"java": {
-					"version": "1.21",
-					"youtube": "",
+					"version": "1.20.1",
+					"youtube": "2lvUqbJrYBc",
 					"contents": ["world"],
-					"url": ""
+					"url": "https://github.com/Kyouju-Redstone/rs-circuit-download/releases/download/JE_Castle_Gate/CastleGate.zip"
 				},
 				"bedrock": {
-					"version": "1.21",
-					"youtube": "",
+					"version": "",
+					"youtube": "W1h4fbSOpzs",
 					"contents": ["world"],
-					"url": ""
+					"url": "https://github.com/Kyouju-Redstone/rs-circuit-download/releases/download/BE_Castle_Gate/CastleGate.mcworld"
 				}
 			}
 		}
